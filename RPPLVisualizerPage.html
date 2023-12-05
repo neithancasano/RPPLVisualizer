@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Arial&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+    /* Global styles */
+    body {
+        font-family: 'Arial', sans-serif;
+        margin: 20px;
+    }
+
+    #dropdown2 {
+      margin-right: 0;
+    } 
+
+    /* Dropdown styles */
+    select {
+        display: inline-block;
+        width: 45%;
+        max-width: 500px;
+        margin-right: 5%;
+        height: 35px;
+        padding: 5px 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        line-height: 1.3;
+        color: #444;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        appearance: none; /* removes default dropdown arrow in some browsers */
+        background-color: #fff;
+        background-image: 
+            linear-gradient(45deg, transparent 50%, #444 60%),
+            linear-gradient(-45deg, transparent 50%, #444 50%);
+        background-position: 
+            calc(100% - 20px) calc(1em + 2px), 
+            calc(100% - 15px) calc(1em + 2px), 
+            100% 0;
+        background-size: 
+            5px 5px,
+            5px 5px,
+            2.5em 2.5em;
+        background-repeat: no-repeat;
+        transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+
+    select:focus {
+        border-color: #007BFF;
+        outline: none;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+    }
+
+    .pivot-checkbox-container {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    // FOR CALENDAR PICKER
+    #dateRangePicker {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Use a clean, professional font */
+      padding: 10px 15px; /* Add some padding inside the input box */
+      font-size: 16px; /* Increase font size for better readability */
+      border: 1px solid #ccc; /* Add a subtle border */
+      border-radius: 4px; /* Slightly round the corners */
+      width: 100%; /* Make the input stretch to full container width */
+      box-sizing: border-box; /* Ensure padding doesn't affect overall width */
+      margin-top: 10px; /* Add a bit of margin at the top */
+      max-width: 300px; /* Set a max-width for larger screens */
+    }
+
+    /* Style the flatpickr calendar to match the input */
+    .flatpickr-calendar {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      border-radius: 4px;
+    }
+
+    /* Increase the size of the date cells in the flatpickr calendar */
+    .flatpickr-day {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    /* Style for the selected date range */
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.inRange {
+      background: #4d90fe; /* A professional blue shade for the selected dates */
+      color: white;
+    }
+
+    /* Hover effects for the calendar dates */
+    .flatpickr-day:hover {
+      background: #f0f0f0;
+      cursor: pointer;
+    }
+
+    /* Style for disabled dates, if any */
+    .flatpickr-day.flatpickr-disabled {
+      background: #E8E8E8;
+      cursor: not-allowed;
+    }
+
+    #emoji {
+      cursor: pointer; /* This makes the cursor look like a pointer when you hover over the emoji */
+    }
+
+    #mychartdiv {
+        display: flex;
+        overflow-x: auto;
+        align-items: center;
+        gap: 20px;
+        width: 60vw;
+    }
+
+    #mychartdiv canvas {
+        flex-shrink: 0;
+
+    }
+
+    .checkbox-container {
+        display: flex;
+        justify-content: center; /* Center horizontally */
+        align-items: center;     /* Center vertically */
+        gap: 20px;
+    }
+
+    .glass-container {
+      background-color: rgba(255, 255, 255, 0.2); /* Background color with opacity for a glass-like effect */
+      border-radius: 10px; /* Rounded corners for the container */
+      padding: 5px; /* Add padding as needed */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* Box shadow for depth */
+      align-items: center; /* Center vertically */
+      justify-content: space-between;
+      width: 70vw;
+    }
+
+    </style>
+
+  </head>
+  <body>
+
+    <center>
+      <h2> RPPL Visualizer </h2>
+
+      <!-- First Dropdown -->
+      <select id="dropdown1" onchange="updateChart()">
+      </select>
+
+      <!-- Second Dropdown (duplicate of the first) -->
+      <select id="dropdown2" onchange="updateChart()">
+      </select>
+
+      <div class="glass-container">
+        <!-- Checkbox to Pivot Data -->
+        <div class="date-picker-container">
+
+          <input type="date" id="dateRangePicker" placeholder="Add Dates / Date Ranges" />
+          <span id="emoji">📅</span> 
+          <!-- <div id="selectedRanges" style="margin-left:20px; display:inline-block;"></div> -->
+
+          <select id="presetDateRange" onchange="handlePresetDateRangeChange()">
+              <option value="" disabled selected>or Select a Preset Date Range</option>
+
+              <option value="spring2022">Spring 2022</option>
+              <option value="summer2022">Summer 2022</option>
+              <option value="fall2022">Fall 2022</option>
+              <option value="winter2022">Winter 2022</option>
+              <option value="spring2023">Spring 2023</option>
+              <option value="summer2023">Summer 2023</option>
+              <option value="fall2023">Fall 2023</option>
+              <option value="winter2023">Winter 2023</option>
+              <option value="spring2024">Spring 2024</option>
+              <option value="summer2024">Summer 2024</option>
+              <option value="fall2024">Fall 2024</option>
+              <option value="winter2024">Winter 2024</option>
+              <option value="spring2025">Spring 2025</option>
+              <option value="summer2025">Summer 2025</option>
+              <option value="fall2025">Fall 2025</option>
+              <option value="winter2025">Winter 2025</option>
+          </select>
+        </div>
+
+        <div class="checkbox-container">
+            <div class="pivot-checkbox-container">
+                <label>
+                    <input type="checkbox" id="pivotCheckbox" onchange="pivotData()"> Switch X and Y Axes
+                </label>
+            </div>
+
+            <!-- Toggle compare over time -->
+            <div class="compare-over-time-checkbox">
+                <label>
+                    <input type="checkbox" id="compareOverTimeCheckbox" onchange="toggleCompareMode()"> Compare Mode
+                </label>
+            </div>
+        </div>
+      </div>
+      <!-- Chart div; The charts would appear here style="position: relative; height:40vh; width:70vw; margin: 0 auto;"-->
+
+      <div id="mychartdiv" class="container" >
+        <canvas id="mychart"> </canvas>
+      </div>
+
+
+    </center>
+
+    <script>
+
+      var jslist = [];
+      var transposed = [];
+      var dateconstraints = [];
+
+      let mychart = document.getElementById("mychart").getContext('2d');
+      let localChart;
+
+      document.getElementById('emoji').addEventListener('click', function() {
+        document.getElementById('dateRangePicker').focus();
+      });
+
+      var dateRangePicker = flatpickr("#dateRangePicker", {
+        mode: "range",
+        onClose: function(selectedDates) {
+          // Only proceed if two dates have been selected (start and end)
+          if (selectedDates.length === 2) {
+            var newRange = [
+              selectedDates[0].toISOString().split('T')[0], // Start date
+              selectedDates[1].toISOString().split('T')[0]  // End date
+            ];
+            
+            // Check if the newRange already exists in dateconstraints
+            var isDuplicate = dateconstraints.some(function(range) {
+              return range[0] === newRange[0] && range[1] === newRange[1];
+            });
+            
+            // If it's not a duplicate, push the newRange into dateconstraints
+            if (!isDuplicate) {
+              dateconstraints.push(newRange);
+            }
+          }
+
+          // Update the text content of the selectedRanges element
+          var rangesText = dateconstraints.map(function(range) {
+            return range.join(' to ');
+          }).join(' | ');
+
+          // DISPLAY SELECTED RANGES
+          // document.getElementById('selectedRanges').textContent = 'Selected Ranges: ' + rangesText;
+          // document.getElementById('selectedRanges').textContent = 'dateconstraints: ' + dateconstraints;
+          console.log("selected Ranges: " + dateconstraints);
+
+          // Here you would refresh your graph
+          console.log(dateconstraints);
+          updateChart();
+        }
+      });
+      
+      
+      function setify(labels, scores) {
+          if (labels.length !== scores.length) {
+              throw new Error("Labels and scores arrays must be of the same length.");
+          }
+
+          // if dd1 is an identifier and dd2 is a number type
+          if (typeof scores[0] === "number"){
+            const scoreSums = {};
+            const labelCounts = {};
+
+            labels.forEach((label, index) => {
+                if (scoreSums[label] === undefined) {
+                    scoreSums[label] = 0;
+                    labelCounts[label] = 0;
+                }
+                scoreSums[label] += scores[index];
+                labelCounts[label]++;
+            });
+
+            const uniqueLabels = Object.keys(scoreSums);
+            const averageScores = uniqueLabels.map(label => scoreSums[label] / labelCounts[label]);
+
+            return [uniqueLabels, averageScores];
+          }
+          else {
+            const categoryCounts = {};
+            const categories = new Set();
+
+            labels.forEach((label, index) => {
+                if (!categoryCounts[label]) {
+                    categoryCounts[label] = {};
+                }
+                if (!categoryCounts[label][scores[index]]) {
+                    categoryCounts[label][scores[index]] = 0;
+                }
+                categoryCounts[label][scores[index]]++;
+                categories.add(scores[index]);
+            });
+
+            const dataset = [];
+            Array.from(categories).forEach(cat => {
+                const data = Object.keys(categoryCounts).map(label => categoryCounts[label][cat] || 0);
+                dataset.push({
+                    label: cat,
+                    data: data,
+                    backgroundColor: randomColor()
+                });
+            });
+
+            return [Object.keys(categoryCounts), dataset];            
+          }
+
+      }
+
+      function randomColor() {
+          const r = Math.floor(Math.random() * 255);
+          const g = Math.floor(Math.random() * 255);
+          const b = Math.floor(Math.random() * 255);
+          return `rgba(${r},${g},${b},0.6)`;
+      }
+
+      function displayData(data) {
+        // alert(JSON.stringify(data));
+        // alert ("data: " + data);
+        jslist = JSON.parse(data);
+        // alert("jlist[0]:" + jslist[0]);
+
+        // transpose rows to cols for graphing
+        for (let i = 0; i < jslist[0].length; i++) {
+            transposed.push(jslist.map(row => row[i]));
+        }
+
+        // shift everything to erase the first row of everything
+        for (let i = 0; i < jslist[0].length; i++){
+          transposed[i].shift();
+        }
+
+        var labels = transposed[2];
+        var scores = transposed[5];
+
+        l = setify(labels,scores);
+
+        if (typeof scores[0] === "number") {
+            // ... your previous chart creation logic for single dataset ...
+            localChart = new Chart(mychart, {
+            type: 'bar',
+            data: {
+              labels: l[0],
+              datasets: [{
+                label:"AVERAGE Agreement with X",
+                data: l[1],
+                backgroundColor: 'rgba(230, 78, 140,0.6)'
+              }]
+              
+            },
+            options: {
+              plugins: {
+                  title: {
+                      display: true,
+                      text: 'Institutions and Agreement with X',
+                      fontsize: 40
+                  }
+              }
+            }
+          })  
+        } else {
+          localChart = new Chart(mychart, {
+              type: 'bar',
+              data: {
+                  labels: l[0],
+                  datasets: l[1]
+              },
+              options: {
+                  scales: {
+                      x: {
+                          beginAtZero: true,
+                          stacked: true
+                      },
+                      y: {
+                          stacked: true,
+                          beginAtZero: true,
+                          stacked: true,
+                          ticks: {
+                              // Forces step size to be 1
+                              stepSize: 1,
+                              precision: 0,
+                              // Ensures that the ticks are integers
+                              callback: function(value) {
+                                  if (Math.floor(value) === value) {
+                                      return value;
+                                  }
+                              }
+                          }
+                      }
+                  },
+                  plugins: {
+                    title: {
+                      display: true,
+                      font: {
+                        size: 18,
+                        family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif", // Set the font family
+                        style: 'normal', // Set the style of the font
+                        weight: '300' // Use a lighter font weight; common values are 'normal', 'bold', '100', ..., '900'
+                      },
+                      color: 'rgba(145, 120, 120, 1)'                     
+                    }
+                  }
+              }
+          });
+        }        
+
+
+        // populate drop down listboxes
+
+        let dropdown1 = document.getElementById("dropdown1");
+        let dropdown2 = document.getElementById("dropdown2");
+
+        jslist[0].forEach(item => {
+            let option1 = document.createElement("option");
+            option1.text = item;
+            option1.value = item;
+            dropdown1.add(option1);
+
+            let option2 = document.createElement("option");
+            option2.text = item;
+            option2.value = item;
+            dropdown2.add(option2);
+        });
+
+        dropdown1.selectedIndex = 2;  // Set to the 3rd option (0-based index)
+        dropdown2.selectedIndex = 5;  // Set to the 6th option (0-based index)
+   
+
+      }
+
+      function handleError(error) {
+          console.error(error);
+          alert("There was an error fetching data: " + error);
+      }      
+
+      function fetchDataFromSheet() {
+        google.script.run
+          .withSuccessHandler(displayData)
+          .withFailureHandler(handleError)
+          .getDataFromSheet();
+      }
+
+      // helper function to filter jslist using the dates in dateconstraints
+      function filterByDateConstraints(jslist, dateconstraints) {
+        return jslist.filter(function(row) {
+          // Ensure the timestamp is a valid date
+          if (isNaN(Date.parse(row[1]))) {
+            console.error('Invalid Timestamp:', row[1]);
+            return false; // Skip this row if the timestamp is invalid
+          }
+          
+          // Extract the date from the ISO formatted Timestamp
+          var isoDate = new Date(row[1]);
+          var formattedRowDate = isoDate.toISOString().split('T')[0]; // Converts to 'yyyy-mm-dd' format
+
+          // Check if formattedRowDate falls within any of the date ranges specified in dateconstraints
+          return dateconstraints.some(function([startDate, endDate]) {
+            // Check if the date strings are valid
+            if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+              console.error('Invalid date constraint:', startDate, endDate);
+              return false; // Skip this date constraint if invalid
+            }
+            
+            var startDateObj = new Date(startDate);
+            var endDateObj = new Date(endDate);
+
+            // Check if the row's date is within the start and end dates
+            // We compare the time value (milliseconds since epoch) for accuracy
+            return isoDate.getTime() >= startDateObj.getTime() && isoDate.getTime() <= endDateObj.getTime();
+          });
+        });
+      }
+
+      var compareMode = false;
+
+      // scroll to the new map when a new one gets generated in compare mode
+      function scrollToNewChart() {
+        var chartContainer = document.getElementById('mychartdiv');
+        var targetScroll = chartContainer.scrollWidth - chartContainer.clientWidth; // Target scroll position
+        var currentScroll = chartContainer.scrollLeft; // Current scroll position
+        var step = (targetScroll - currentScroll) / 60; // Adjust the divisor to control speed
+
+        function stepScroll() {
+            if (Math.abs(chartContainer.scrollLeft - targetScroll) > Math.abs(step)) {
+                chartContainer.scrollLeft += step;
+                window.requestAnimationFrame(stepScroll);
+            } else {
+                chartContainer.scrollLeft = targetScroll; // Ensures it scrolls exactly to the target
+            }
+        }
+
+        stepScroll();
+      }
+
+      function toggleCompareMode() {
+          compareMode = document.getElementById("compareOverTimeCheckbox").checked;
+      }
+
+      function updateChart() {
+        // Get selected values from dropdowns
+        // let selectedValue1 = dropdown1.value;
+        // let selectedValue2 = dropdown2.value;
+
+        // accommodate pivot option <- more confusing in terms of UX, let's just reset the checkbox
+        const isPivotChecked = document.getElementById("pivotCheckbox").checked;
+    
+        let selectedValue1 = isPivotChecked ? dropdown2.value : dropdown1.value;
+        let selectedValue2 = isPivotChecked ? dropdown1.value : dropdown2.value;    
+
+        if (dateconstraints && dateconstraints.length > 0){
+          // dateconstraints.push([startDateValue, endDateValue]);
+          // alert(dateconstraints);
+          // alert(startDateValue + " " + endDateValue);
+
+          // alert("NORMAL JSLIST: " + jslist);
+          
+          var filteredJsList = filterByDateConstraints(jslist, dateconstraints);
+          // alert("FILTERED JSLIST: " + JSON.stringify(filteredJsList));
+
+          transposed = [];
+
+          // transpose rows to cols for graphing
+          for (let i = 0; i < filteredJsList[0].length; i++) {
+              transposed.push(filteredJsList.map(row => row[i]));
+          }
+
+          // shift everything to erase the first row of everything
+          for (let i = 0; i < filteredJsList[0].length; i++){
+            transposed[i].shift();
+          }
+
+        }
+
+
+        // remove all data.
+        localChart.data.labels.length = 0;
+        localChart.data.datasets.forEach((dataset) => {
+            dataset.data.length = 0;
+        });
+
+        // COMPARE MODE
+
+        if (compareMode){
+
+          console.log("compare mode");
+
+          var newData = setify(transposed[dropdown1.selectedIndex], transposed[dropdown2.selectedIndex]);
+
+          var newCanvas = document.createElement('canvas');
+          newCanvas.id = 'chart-' + Date.now(); // Unique ID for the canvas
+          document.getElementById('mychartdiv').appendChild(newCanvas);
+
+          newchart = new Chart(newCanvas.getContext('2d'), {
+              type: 'bar',
+              data: {
+                  labels: newData[0],
+                  datasets: newData[1]
+              },
+              options: {
+                  scales: {
+                      x: {
+                          beginAtZero: true,
+                          stacked: true
+                      },
+                      y: {
+                          stacked: true,
+                          beginAtZero: true,
+                          stacked: true,
+                          ticks: {
+                              // Forces step size to be 1
+                              stepSize: 1,
+                              precision: 0,
+                              // Ensures that the ticks are integers
+                              callback: function(value) {
+                                  if (Math.floor(value) === value) {
+                                      return value;
+                                  }
+                              }
+                          }
+                      }
+                  },
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: dateconstraints,
+                      font: {
+                        size: 18,
+                        family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif", // Set the font family
+                        style: 'normal', // Set the style of the font
+                        weight: '300' // Use a lighter font weight; common values are 'normal', 'bold', '100', ..., '900'
+                      },
+                      color: 'rgba(145, 120, 120, 1)'                     
+                    }
+                  }
+              }
+          });
+
+          // Scroll to the new chart
+          scrollToNewChart();
+
+
+        }
+        else {
+          var newData = setify(transposed[dropdown1.selectedIndex], transposed[dropdown2.selectedIndex]);
+          // uncomment to see new data changes after selecting new option in dropdownlist
+          // alert("newdata: " + newData);
+          // alert("jlist: " + jlist);
+          // alert("transposed: " + transposed);
+
+          localChart.data.labels.length = 0;
+          localChart.data.datasets.length = 0;
+
+          localChart.data.labels.push(...newData[0]);
+          if (typeof transposed[dropdown2.selectedIndex][0] === "number") {
+              localChart.data.datasets.push({
+                  // label:"AVERAGE Agreement with X",
+                  label: selectedValue2,
+                  data: newData[1],
+                  backgroundColor: 'rgba(230, 78, 140,0.6)'
+              });
+
+              let selectedText1 = dropdown1.options[dropdown1.selectedIndex].text.substring(0, 50) + "...";
+              let selectedText2 = dropdown1.options[dropdown2.selectedIndex].text.substring(0, 50) + "...";
+              localChart.options.plugins.title.text = "[" + selectedText1 + "] × [" + selectedText2 + "]";
+              // localChart.options.plugins.title.text = "NEITHAN";
+
+          } else {
+              localChart.data.datasets.push(...newData[1]);
+
+              let selectedText1 = dropdown1.options[dropdown1.selectedIndex].text.substring(0, 50) + "...";
+              let selectedText2 = dropdown1.options[dropdown2.selectedIndex].text.substring(0, 50) + "...";
+              localChart.options.plugins.title.text = "[" + selectedText1 + "] × [" + selectedText2 + "]";
+              // localChart.options.plugins.title.text = "NEITHAN";
+          }
+
+          // localChart.data.labels.push(...newData[0]);
+          // localChart.data.datasets[0].data.push(...newData[1]);
+
+          localChart.update();          
+        }
+
+          // reset dateconstraints always
+          dateconstraints = []
+      }  
+
+      function pivotData() {
+        // Swap the selected indexes of dropdown1 and dropdown2
+        let tempIndex = dropdown1.selectedIndex;
+        dropdown1.selectedIndex = dropdown2.selectedIndex;
+        dropdown2.selectedIndex = tempIndex;
+
+        // Call the updateChart function to reflect the change
+        updateChart();
+      }
+
+      // HANDLE PRESET DATE RANGE change
+
+      function handlePresetDateRangeChange() {
+          var selectedPreset = document.getElementById("presetDateRange").value;
+
+          var presetDateRanges = {
+            'spring2022': ['2022-03-20', '2022-06-20'],
+            'summer2022': ['2022-06-21', '2022-09-22'],
+            'fall2022': ['2022-09-23', '2022-12-20'],
+            'winter2022': ['2022-12-21', '2023-03-19'],
+            'spring2023': ['2023-03-20', '2023-06-20'],
+            'summer2023': ['2023-06-21', '2023-09-22'],
+            'fall2023': ['2023-09-23', '2023-12-20'],
+            'winter2023': ['2023-12-21', '2024-03-19'],
+            'spring2024': ['2024-03-20', '2024-06-20'],
+            'summer2024': ['2024-06-21', '2024-09-22'],
+            'fall2024': ['2024-09-23', '2024-12-20'],
+            'winter2024': ['2024-12-21', '2025-03-19'],
+            'spring2025': ['2025-03-20', '2025-06-20'],
+            'summer2025': ['2025-06-21', '2025-09-22'],
+            'fall2025': ['2025-09-23', '2025-12-20'],
+            'winter2025': ['2025-12-21', '2026-03-19']
+          };
+
+          if (selectedPreset in presetDateRanges) {
+              var dates = presetDateRanges[selectedPreset];
+              dateconstraints.push(dates);
+              console.log(dates);
+          }
+
+          updateChart()
+          
+      }
+
+      fetchDataFromSheet();
+
+    </script>
+  </body>
+</html>
